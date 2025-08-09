@@ -1,0 +1,467 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>구구단 베네치아 (모바일)</title>
+<style>
+  :root{
+    --water-top:#0d9488; --water-bot:#022c22; --primary:#064e3b;
+    --surface:#fff; --bg:#e0f2fe; --blue-bar:#0c4a6e;
+    --radius:1.25rem; --shadow:0 6px 16px rgba(0,0,0,.12);
+    --mega:#ef4444; --megaGlow:#fecaca;
+  }
+  *{box-sizing:border-box}
+  html{font-size:clamp(16px,4vw,18px)}
+  body{
+    margin:0;font-family:"Pretendard","Noto Sans KR",sans-serif;
+    background:var(--bg);color:var(--primary);
+    display:flex;flex-direction:column;align-items:center;min-height:100vh;
+    -webkit-font-smoothing:antialiased; touch-action:manipulation;
+  }
+
+  /* ---------- INTRO ---------- */
+  #intro{position:fixed;inset:0;background:rgba(0,0,0,.65);
+         display:flex;align-items:center;justify-content:center;z-index:999;padding:2rem 1rem}
+  #introBox{background:var(--surface);border-radius:var(--radius);
+            max-width:480px;width:100%;padding:1.8rem 1.4rem;box-shadow:var(--shadow)}
+  #introBox h2{margin:0 0 1rem;font-size:1.4rem;text-align:center}
+  #story{font-size:.95rem;line-height:1.55;white-space:pre-wrap}
+  .btn{display:block;margin:1.4rem auto 0;background:var(--primary);color:#fff;
+       border:none;padding:.75rem 1.8rem;font-size:1.05rem;border-radius:var(--radius);
+       cursor:pointer;transition:transform .15s,box-shadow .15s}
+  .btn:active{transform:scale(.98)}
+  .btn:hover{transform:translateY(-2px);box-shadow:var(--shadow)}
+
+  /* ---------- TOP BAR ---------- */
+  #topBar{width:100%;max-width:420px;height:36px;background:var(--blue-bar);color:#fff;
+          display:flex;align-items:center;justify-content:space-between;padding:0 .6rem;
+          font-size:.95rem;border-top-left-radius:var(--radius);border-top-right-radius:var(--radius)}
+
+  /* ---------- GAME ---------- */
+  #gameWrapper{width:100%;max-width:420px;flex:1 0 auto}
+  #game{
+    position:relative;width:100%;height:65vh;
+    background:linear-gradient(var(--water-top)0%,var(--water-top)75%,var(--water-bot)100%);
+    overflow:hidden;border-bottom-left-radius:var(--radius);border-bottom-right-radius:var(--radius);
+    box-shadow:var(--shadow)
+  }
+  .drop{
+    position:absolute;left:0;top:0;transform:translate3d(0,0,0);
+    font-size:1.45rem;font-weight:700;color:#fff;
+    user-select:none;pointer-events:none;will-change:transform,opacity;
+    text-shadow:0 2px 6px rgba(0,0,0,.35);
+    padding:.15rem .5rem;border-radius:9999px;background:rgba(14,165,233,.25);
+    border:2px solid rgba(255,255,255,.25)
+  }
+  .drop.fallOut{animation:fallOut .22s ease-out forwards}
+  @keyframes fallOut{to{opacity:0;transform:translate3d(var(--x,0), calc(var(--y,0) + 20px),0) scale(.92)}}
+
+  /* Mega (큰 구구단) */
+  .drop.mega{
+    font-size:2.4rem; background:rgba(239,68,68,.25);
+    border-color:rgba(255,255,255,.45); color:#fff;
+    box-shadow:0 0 0 6px rgba(239,68,68,.16), 0 0 24px 6px var(--megaGlow);
+    animation:pulse 1.1s ease-in-out infinite;
+  }
+  @keyframes pulse{
+    0%,100%{box-shadow:0 0 0 6px rgba(239,68,68,.16), 0 0 24px 6px var(--megaGlow)}
+    50%{box-shadow:0 0 0 10px rgba(239,68,68,.20), 0 0 36px 10px var(--megaGlow)}
+  }
+
+  /* Tower */
+  #tower{position:absolute;bottom:0;left:50%;transform:translateX(-50%);
+         display:flex;flex-direction:column;align-items:center;gap:2px;pointer-events:none}
+  #towerTop{width:80px;height:46px;background:#d6d3d1;border:2px solid #737373;border-bottom:none;
+            border-top-left-radius:6px;border-top-right-radius:6px;display:flex;align-items:flex-start;justify-content:center}
+  #towerTop::before{content:"";width:6px;height:20px;background:#737373;margin-top:6px}
+  .brickRow{display:flex}
+  .brick{width:26px;height:16px;background:#60a5fa;border:1px solid #1e3a8a;transition:.25s}
+  .brick.cracked{opacity:.18;filter:grayscale(.6)}
+
+  /* ---------- HUD ---------- */
+  #hud{margin:.45rem 0 0;width:100%;max-width:420px;display:flex;justify-content:space-between;font-size:1rem}
+
+  /* Input (read-only) */
+  #answerInput{
+    width:100%;max-width:420px;margin-top:.6rem;padding:.7rem 1rem;font-size:1.1rem;
+    border:2px solid var(--primary);border-radius:var(--radius);background:#f9fafb;color:#111
+  }
+
+  #resultBox{margin-top:1rem;font-size:1.2rem;font-weight:700;text-align:center;display:none}
+
+  /* ---------- KEYPAD ---------- */
+  #keypad{
+    width:100%;max-width:420px;margin:.6rem 0;display:grid;
+    grid-template-columns:repeat(3,1fr);gap:.5rem
+  }
+  .key{
+    min-height:56px;padding:.95rem;font-size:1.35rem;font-weight:800;border:none;border-radius:var(--radius);
+    background:var(--primary);color:#fff;box-shadow:var(--shadow);cursor:pointer;
+    touch-action:manipulation; -webkit-tap-highlight-color:transparent;
+    display:flex;align-items:center;justify-content:center;user-select:none
+  }
+  .key:active{transform:scale(.98)}
+  .key.special{background:#1e3a8a}
+  .key[aria-pressed="true"]{outline:3px solid #fef08a}
+
+  /* Clear-all burst text */
+  .burst{
+    position:absolute;left:50%;top:25%;transform:translate(-50%,-50%);
+    color:#fff;font-weight:900;font-size:2rem;text-shadow:0 2px 8px rgba(0,0,0,.5);
+    animation:burst .75s ease-out forwards; pointer-events:none;
+  }
+  @keyframes burst{
+    0%{opacity:0;transform:translate(-50%,-50%) scale(.85)}
+    20%{opacity:1;transform:translate(-50%,-50%) scale(1)}
+    100%{opacity:0;transform:translate(-50%,-40%) scale(1.15)}
+  }
+</style>
+</head>
+<body>
+  <!-- INTRO -->
+  <div id="intro" aria-modal="true" role="dialog">
+    <div id="introBox">
+      <h2 id="introTitle">당신은 베네치아를 아십니까?</h2>
+      <div id="story">아름다운 물의 도시 베니스가 있는 이탈리아 북부의 베네치아.
+시인들에게는 깊은 사색을 그리고 연인들에게는 달콤한 사랑을 낳게 한 곳…
+
+서기 2040년.
+오랜 세월 바닷물에 의한 침식과 부식으로 다른 건물들은 자취를 감추고,
+화려했던 추억과 마지막 희망을 안은 채 하나의 탑만이 물위에 남아 있습니다.
+그런데, 이 베네치아의 하늘에 바이러스 군단이 나타납니다.
+하늘에서 떨어지는 이 바이러스들은 물속에 떨어지거나 탑에 떨어지는 순간,
+탑을 지탱하고 있는 벽돌이 하나씩 하나씩 깨뜨려집니다.
+탑을 지탱하고 있는 벽돌이 모두 깨어지면 우리의 사랑과 희망을 지닌 마지막 탑마저
+물속으로 사라지고 말 것입니다.
+
+『베네치아를 사수하라!』
+이제 베네치아를 지킬 마지막 소망이 바로 당신의 손에 쥐어졌습니다.
+바이러스를 막아 부디 베네치아를 무사히 지켜주십시오.
+행운을 빕니다!</div>
+      <button id="startBtn" class="btn">게임 시작</button>
+    </div>
+  </div>
+
+  <!-- GAME AREA -->
+  <div id="gameWrapper">
+    <div id="topBar"><span>구구단 베네치아</span><span id="score">점수: 0</span></div>
+    <div id="game" aria-live="polite">
+      <div id="tower" aria-hidden="true">
+        <div id="towerTop"></div>
+        <div class="brickRow"><div class="brick"></div><div class="brick"></div><div class="brick"></div></div>
+        <div class="brickRow"><div class="brick"></div><div class="brick"></div><div class="brick"></div></div>
+        <div class="brickRow"><div class="brick"></div><div class="brick"></div><div class="brick"></div></div>
+      </div>
+    </div>
+  </div>
+
+  <div id="hud">
+    <span id="miss">실수: 0 / 9</span>
+    <span id="speed">속도: 1.0x</span>
+  </div>
+
+  <!-- Read-only display -->
+  <input id="answerInput" type="text" placeholder="정답 입력 (키패드 사용)" readonly />
+
+  <!-- NUMERIC KEYPAD -->
+  <div id="keypad" role="group" aria-label="숫자 키패드">
+    <button class="key" data-val="1" aria-label="1">1</button>
+    <button class="key" data-val="2" aria-label="2">2</button>
+    <button class="key" data-val="3" aria-label="3">3</button>
+    <button class="key" data-val="4" aria-label="4">4</button>
+    <button class="key" data-val="5" aria-label="5">5</button>
+    <button class="key" data-val="6" aria-label="6">6</button>
+    <button class="key" data-val="7" aria-label="7">7</button>
+    <button class="key" data-val="8" aria-label="8">8</button>
+    <button class="key" data-val="9" aria-label="9">9</button>
+    <button class="key special" data-action="back" aria-label="지우기">←</button>
+    <button class="key" data-val="0" aria-label="0">0</button>
+    <button class="key special" data-action="enter" aria-label="엔터">⏎</button>
+  </div>
+
+  <div id="resultBox"></div>
+
+<script>
+/* =================== CONFIG (난이도 완화) =================== */
+const MAX_MISS = 9;
+const BASE_SPEED = 46;        // px/s 기본
+const SPEED_STEP = 2.0;       // (완화) 점수당 가속 ↓
+const SPAWN_BASE = 2200;      // (완화) 스폰 주기 ↑
+const PACK_GROW_SCORE_STEP = 18; // (완화) 동시출현 증가 템포 늦춤
+const OPS = [2,3,4,5,6,7,8,9];
+
+/* 메가 출현 확률: 기본은 낮게, 속도 계수 2.5× 이상이면 '자주' */
+function megaChanceByFactor(f){
+  return f >= 2.5 ? 0.35 : 0.10;   // 요구사항 2
+}
+
+/* =================== STATE =================== */
+let drops = [];            // {el,x,y,ans,isMega,a,b,speedMul}
+let timer = null, anim = null, last = 0;
+let score = 0, miss = 0, broken = 0, playing = false;
+let hasMega = false;
+
+// 적응형 난이도(단별 가중치)
+const weights = Array(10).fill(1); // 0..9 (2~9 사용)
+
+/* =================== DOM =================== */
+const $intro = document.getElementById('intro');
+const $introTitle = document.getElementById('introTitle');
+const $story = document.getElementById('story');
+const originalTitle = $introTitle.textContent;
+const originalStory = $story.textContent;
+
+const $start = document.getElementById('startBtn');
+const $game  = document.getElementById('game');
+const $score = document.getElementById('score');
+const $miss  = document.getElementById('miss');
+const $speed = document.getElementById('speed');
+const $input = document.getElementById('answerInput');
+const $res   = document.getElementById('resultBox');
+const $bricks = [...document.querySelectorAll('.brick')];
+const $keys = [...document.querySelectorAll('.key')];
+
+/* =================== HELPERS =================== */
+const rnd = (m,n)=>Math.floor(Math.random()*(n-m+1))+m;
+
+function pickDan(){ // 가중치 추출 (2~9)
+  const pool = [];
+  for(let d=2; d<=9; d++){
+    const w = Math.max(1e-3, weights[d]);
+    for(let k=0; k<Math.round(w*10); k++) pool.push(d);
+  }
+  return pool[rnd(0, pool.length-1)];
+}
+
+function adjustWeight(dan, ok){
+  if(ok) weights[dan] = Math.max(0.8, weights[dan]-0.05);
+  else   weights[dan] = Math.min(5.0, weights[dan]+0.35);
+}
+
+/* =================== BRICK (LIVES) =================== */
+function crack(){
+  if(broken < $bricks.length){
+    $bricks[broken].classList.add('cracked');
+    broken++;
+  }
+}
+
+/* =================== SPAWN =================== */
+function spawnPack(){
+  // 현재 속도 계수
+  const sp = BASE_SPEED + score*SPEED_STEP;
+  const factor = sp / BASE_SPEED;
+
+  // (완화) 동시 등장 수 1 → 2 (18점 이후) → 3 (36점 이후)
+  const n = Math.min(3, 1 + Math.floor(score / PACK_GROW_SCORE_STEP));
+
+  // 메가 후보: 팩마다 1개 제한
+  let tryMega = (!hasMega && Math.random() < megaChanceByFactor(factor)); // 요구사항 2
+
+  for(let i=0; i<n; i++){
+    const isMega = tryMega;
+    spawn(isMega);
+    if(isMega){ hasMega = true; tryMega = false; }
+  }
+}
+
+function spawn(isMega=false){
+  const a = pickDan();
+  const b = rnd(2,9);
+  const ans = String(a*b);
+
+  const el = document.createElement('span');
+  el.className = 'drop' + (isMega ? ' mega' : '');
+  el.textContent = `${a}×${b}`;
+  el.setAttribute('aria-label', `${a} 곱하기 ${b}`);
+
+  // X 위치: 기존 드롭들과 70px 이상 떨어지도록 시도(겹침 완화)
+  let x;
+  const W = $game.clientWidth;
+  for(let attempt=0; attempt<8; attempt++){
+    const pad = isMega ? 140 : 60;
+    x = rnd(10, Math.max(60, W - pad));
+    const close = drops.some(d => Math.abs(d.x - x) < 70);
+    if(!close) break;
+  }
+  el.style.transform = `translate3d(${x}px,0,0)`;
+
+  // (요구사항 3) 드롭별 하강속도 다르게: 0.9 ~ 1.2배
+  const speedMul = isMega ? 0.85 : (0.9 + Math.random()*0.3);
+
+  $game.appendChild(el);
+  drops.push({el, x, y: 0, ans, isMega, a, b, speedMul});
+}
+
+/* =================== LOOP =================== */
+function loop(ts){
+  if(!playing) return;
+  if(!last) last = ts;
+  const dt = (ts - last)/1000;
+  last = ts;
+
+  const baseSp = BASE_SPEED + score*SPEED_STEP;
+  const factor = baseSp / BASE_SPEED;
+  $speed.textContent = `속도: ${factor.toFixed(1)}x`;
+
+  for(let i=drops.length-1; i>=0; i--){
+    const d = drops[i];
+    const v = baseSp * d.speedMul;  // (요구사항 3) 개별 속도 적용
+    d.y += v * dt;
+    d.el.style.transform = `translate3d(${d.x}px, ${d.y}px, 0)`;
+
+    if(d.y > $game.clientHeight - 46){
+      d.el.classList.add('fallOut');
+      d.el.style.setProperty('--x', '0px');
+      d.el.style.setProperty('--y', '0px');
+      setTimeout(()=> d.el.remove(), 220);
+      drops.splice(i,1);
+      if(d.isMega) hasMega = false;
+
+      crack();
+      miss++;
+      $miss.textContent = `실수: ${miss} / ${MAX_MISS}`;
+      adjustWeight(d.a, false);
+      if(navigator.vibrate) navigator.vibrate(60);
+
+      if(broken >= MAX_MISS){ end(false); return; }
+    }
+  }
+
+  anim = requestAnimationFrame(loop);
+}
+
+/* =================== GAME FLOW =================== */
+function start(){
+  // 초기 설명 복원(첫 화면 유지용)
+  $introTitle.textContent = originalTitle;
+  $story.textContent = originalStory;
+  $start.textContent = '게임 시작';
+
+  drops.forEach(d=>d.el.remove()); drops = [];
+  score = 0; miss = 0; broken = 0; hasMega = false;
+  for(let d=2; d<=9; d++) weights[d] = 1;
+
+  $score.textContent = '점수: 0';
+  $miss.textContent = `실수: 0 / ${MAX_MISS}`;
+  $speed.textContent = '속도: 1.0x';
+  $bricks.forEach(b=>b.classList.remove('cracked'));
+  $res.style.display = 'none';
+  $input.value = '';
+
+  playing = true;
+  clearInterval(timer);
+  timer = setInterval(spawnPack, SPAWN_BASE);
+
+  cancelAnimationFrame(anim);
+  last = 0;
+  anim = requestAnimationFrame(loop);
+}
+
+function end(clear){
+  playing = false;
+  clearInterval(timer);
+  cancelAnimationFrame(anim);
+  $input.value = '';
+
+  // 요구사항 4: 종료 문구
+  const msg = `용사님의 점수는 ${score}점입니다. 베네치아를 구하러 다시 한번 더 도전하시겠습니까?`;
+  $introTitle.textContent = '게임 종료';
+  $story.textContent = msg;
+  $intro.style.display = 'flex';
+  $start.textContent = '다시 도전';
+}
+
+/* =================== ANSWER CHECK =================== */
+function checkAnswer(){
+  const val = $input.value.trim();
+  if(!val) return;
+
+  // 같은 답 있으면 가장 아래(위험도 높은) 것부터 제거
+  let targetIndex = -1;
+  let maxY = -1;
+  for(let i=0; i<drops.length; i++){
+    if(drops[i].ans === val && drops[i].y > maxY){
+      maxY = drops[i].y;
+      targetIndex = i;
+    }
+  }
+
+  if(targetIndex > -1){
+    const d = drops[targetIndex];
+    adjustWeight(d.a, true);
+
+    score++;
+    $score.textContent = `점수: ${score}`;
+
+    d.el.classList.add('fallOut');
+    setTimeout(()=> d.el.remove(), 180);
+    drops.splice(targetIndex,1);
+
+    if(d.isMega){
+      hasMega = false;
+      clearAllDropsBurst();
+    }
+
+    if(navigator.vibrate) navigator.vibrate(25);
+  }
+
+  $input.value = '';
+}
+
+/* 메가 효과: 전체 제거 */
+function clearAllDropsBurst(){
+  const t = document.createElement('div');
+  t.className = 'burst';
+  t.textContent = '⚡ 전체 제거!';
+  $game.appendChild(t);
+  setTimeout(()=> t.remove(), 800);
+
+  drops.forEach((d,i)=>{
+    d.el.classList.add('fallOut');
+    d.el.style.setProperty('--y', `${10 + i*2}px`);
+    setTimeout(()=> d.el.remove(), 180 + i*10);
+  });
+  drops = [];
+}
+
+/* =================== INPUT (KEYPAD / KEYBOARD) =================== */
+function appendDigit(d){
+  if($input.value.length >= 3) return;
+  $input.value += String(d);
+}
+function backspace(){
+  $input.value = $input.value.slice(0,-1);
+}
+
+document.getElementById('startBtn').addEventListener('pointerdown', ()=>{
+  $intro.style.display='none';
+  start();
+});
+
+/* 모바일 지연 제거: pointerdown */
+$keys.forEach(btn=>{
+  btn.addEventListener('pointerdown', e=>{
+    e.preventDefault();
+    const act = btn.dataset.action;
+    btn.setAttribute('aria-pressed','true');
+
+    if(act === 'back') backspace();
+    else if(act === 'enter') checkAnswer();
+    else appendDigit(btn.dataset.val);
+
+    setTimeout(()=> btn.removeAttribute('aria-pressed'), 120);
+  });
+});
+
+/* 데스크탑 키보드 */
+document.addEventListener('keydown', e=>{
+  if(!playing) return;
+  if(e.key>='0' && e.key<='9') appendDigit(e.key);
+  else if(e.key === 'Backspace') backspace();
+  else if(e.key === 'Enter') checkAnswer();
+});
+</script>
+</body>
+</html>
