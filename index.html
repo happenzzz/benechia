@@ -7,31 +7,67 @@
 <style>
   :root{
     --water-top:#0d9488; --water-bot:#022c22; --primary:#064e3b;
-    --surface:#fff; --bg:#e0f2fe; --blue-bar:#0c4a6e;
+    --surface:#ffffff; --bg:#e0f2fe; --blue-bar:#0c4a6e;
     --radius:1.25rem; --shadow:0 6px 16px rgba(0,0,0,.12);
     --mega:#ef4444; --megaGlow:#fecaca;
+    --glass:rgba(255,255,255,.15);
   }
   *{box-sizing:border-box}
   html{font-size:clamp(16px,4vw,18px)}
   body{
-    margin:0;font-family:"Pretendard","Noto Sans KR",sans-serif;
+    margin:0;font-family:"Pretendard","Noto Sans KR",system-ui,Segoe UI,Roboto,Apple SD Gothic Neo,sans-serif;
     background:var(--bg);color:var(--primary);
     display:flex;flex-direction:column;align-items:center;min-height:100vh;
     -webkit-font-smoothing:antialiased; touch-action:manipulation;
   }
 
-  /* ---------- INTRO ---------- */
+  /* ---------- INTRO / END OVERLAY ---------- */
   #intro{position:fixed;inset:0;background:rgba(0,0,0,.65);
          display:flex;align-items:center;justify-content:center;z-index:999;padding:2rem 1rem}
-  #introBox{background:var(--surface);border-radius:var(--radius);
-            max-width:480px;width:100%;padding:1.8rem 1.4rem;box-shadow:var(--shadow)}
+  #introBox{
+    background:var(--surface);border-radius:var(--radius);
+    max-width:520px;width:100%;padding:1.6rem 1.2rem;box-shadow:var(--shadow);
+  }
   #introBox h2{margin:0 0 1rem;font-size:1.4rem;text-align:center}
   #story{font-size:.95rem;line-height:1.55;white-space:pre-wrap}
-  .btn{display:block;margin:1.4rem auto 0;background:var(--primary);color:#fff;
-       border:none;padding:.75rem 1.8rem;font-size:1.05rem;border-radius:var(--radius);
+  .btn{display:block;margin:1.2rem auto 0;background:var(--primary);color:#fff;
+       border:none;padding:.78rem 1.8rem;font-size:1.05rem;border-radius:var(--radius);
        cursor:pointer;transition:transform .15s,box-shadow .15s}
   .btn:active{transform:scale(.98)}
   .btn:hover{transform:translateY(-2px);box-shadow:var(--shadow)}
+
+  /* --- Ending style upgrade --- */
+  #introBox.ending{
+    background:linear-gradient(135deg, rgba(255,255,255,.92), rgba(240,249,255,.92));
+    backdrop-filter:blur(8px);
+    border:1px solid rgba(14,165,233,.25);
+    box-shadow:0 12px 30px rgba(2,44,34,.25);
+  }
+  .endWrap{
+    display:grid;grid-template-columns:96px 1fr;gap:1rem;align-items:center;
+  }
+  @media (max-width:400px){ .endWrap{grid-template-columns:1fr; text-align:center} }
+  .endHero{
+    display:flex;align-items:center;justify-content:center;
+    padding:.25rem;background:var(--glass);border-radius:1rem;
+    box-shadow:inset 0 0 0 1px rgba(255,255,255,.35);
+  }
+  .endText h3{
+    margin:.2rem 0 .4rem;font-size:1.35rem;letter-spacing:.2px;
+    background:linear-gradient(90deg,#0ea5e9,#065f46);
+    -webkit-background-clip:text;background-clip:text;color:transparent;
+    font-weight:900;
+  }
+  .endMsg{
+    font-size:1.05rem;line-height:1.6;color:#0f172a;
+    background:rgba(255,255,255,.6);padding:.6rem .75rem;border-radius:.8rem;
+    border:1px solid rgba(2,44,34,.1);
+  }
+  .endCTA{margin-top:.8rem;display:flex;gap:.6rem;justify-content:flex-end}
+  .endCTA .btn{margin:0}
+  .ghostBtn{
+    background:#1e3a8a;
+  }
 
   /* ---------- TOP BAR ---------- */
   #topBar{width:100%;max-width:420px;height:36px;background:var(--blue-bar);color:#fff;
@@ -79,6 +115,15 @@
   .brick{width:26px;height:16px;background:#60a5fa;border:1px solid #1e3a8a;transition:.25s}
   .brick.cracked{opacity:.18;filter:grayscale(.6)}
 
+  /* Hero next to tower (in-game) */
+  .heroGame{
+    position:absolute;bottom:0;left:calc(50% + 72px);
+    width:56px;height:56px;
+    transform:translateY(6px);
+    filter:drop-shadow(0 4px 10px rgba(0,0,0,.35));
+    pointer-events:none;
+  }
+
   /* ---------- HUD ---------- */
   #hud{margin:.45rem 0 0;width:100%;max-width:420px;display:flex;justify-content:space-between;font-size:1rem}
 
@@ -119,6 +164,23 @@
 </style>
 </head>
 <body>
+
+  <!-- SVG defs: reusable hero -->
+  <svg width="0" height="0" style="position:absolute">
+    <symbol id="heroSymbol" viewBox="0 0 64 64">
+      <!-- simple chibi knight -->
+      <circle cx="32" cy="18" r="10" fill="#fef3c7" stroke="#0f172a" stroke-width="2"/>
+      <rect x="22" y="28" width="20" height="18" rx="6" fill="#0ea5e9" stroke="#0f172a" stroke-width="2"/>
+      <rect x="26" y="46" width="12" height="12" rx="3" fill="#065f46" stroke="#0f172a" stroke-width="2"/>
+      <!-- shield -->
+      <circle cx="50" cy="34" r="8" fill="#f59e0b" stroke="#0f172a" stroke-width="2"/>
+      <circle cx="50" cy="34" r="3" fill="#fde68a" stroke="#0f172a" stroke-width="1.5"/>
+      <!-- sword -->
+      <rect x="8" y="18" width="20" height="4" rx="2" fill="#94a3b8" stroke="#0f172a" stroke-width="1.5" transform="rotate(-25 8 18)"/>
+      <rect x="22" y="16" width="6" height="8" rx="2" fill="#b45309" stroke="#0f172a" stroke-width="1.5" transform="rotate(-25 22 16)"/>
+    </symbol>
+  </svg>
+
   <!-- INTRO -->
   <div id="intro" aria-modal="true" role="dialog">
     <div id="introBox">
@@ -153,6 +215,8 @@
         <div class="brickRow"><div class="brick"></div><div class="brick"></div><div class="brick"></div></div>
         <div class="brickRow"><div class="brick"></div><div class="brick"></div><div class="brick"></div></div>
       </div>
+      <!-- hero next to tower -->
+      <svg class="heroGame"><use href="#heroSymbol"/></svg>
     </div>
   </div>
 
@@ -183,18 +247,20 @@
   <div id="resultBox"></div>
 
 <script>
-/* =================== CONFIG (난이도 완화) =================== */
+/* =================== CONFIG (난이도 완화 유지) =================== */
 const MAX_MISS = 9;
 const BASE_SPEED = 46;        // px/s 기본
-const SPEED_STEP = 2.0;       // (완화) 점수당 가속 ↓
-const SPAWN_BASE = 2200;      // (완화) 스폰 주기 ↑
-const PACK_GROW_SCORE_STEP = 18; // (완화) 동시출현 증가 템포 늦춤
+const SPEED_STEP = 2.0;       // 점수당 가속 (완화)
+const SPAWN_BASE = 2200;      // 스폰 주기 (완화)
+const PACK_GROW_SCORE_STEP = 18; // 동시출현 증가 템포 늦춤
 const OPS = [2,3,4,5,6,7,8,9];
 
-/* 메가 출현 확률: 기본은 낮게, 속도 계수 2.5× 이상이면 '자주' */
+/* 메가 출현: 속도계수 2.5× 이상일 때도 '빈도 감소' + 최소 간격 12초 */
 function megaChanceByFactor(f){
-  return f >= 2.5 ? 0.35 : 0.10;   // 요구사항 2
+  return f >= 2.5 ? 0.18 : 0.05; // 이전보다 낮춤
 }
+const MEGA_MIN_INTERVAL = 12000; // ms
+let lastMegaAt = 0;
 
 /* =================== STATE =================== */
 let drops = [];            // {el,x,y,ans,isMega,a,b,speedMul}
@@ -207,12 +273,9 @@ const weights = Array(10).fill(1); // 0..9 (2~9 사용)
 
 /* =================== DOM =================== */
 const $intro = document.getElementById('intro');
-const $introTitle = document.getElementById('introTitle');
-const $story = document.getElementById('story');
-const originalTitle = $introTitle.textContent;
-const originalStory = $story.textContent;
+const $introBox = document.getElementById('introBox');
+const originalIntroHTML = $introBox.innerHTML;
 
-const $start = document.getElementById('startBtn');
 const $game  = document.getElementById('game');
 const $score = document.getElementById('score');
 const $miss  = document.getElementById('miss');
@@ -249,20 +312,19 @@ function crack(){
 
 /* =================== SPAWN =================== */
 function spawnPack(){
-  // 현재 속도 계수
-  const sp = BASE_SPEED + score*SPEED_STEP;
-  const factor = sp / BASE_SPEED;
+  const baseSp = BASE_SPEED + score*SPEED_STEP;
+  const factor = baseSp / BASE_SPEED;
 
-  // (완화) 동시 등장 수 1 → 2 (18점 이후) → 3 (36점 이후)
   const n = Math.min(3, 1 + Math.floor(score / PACK_GROW_SCORE_STEP));
 
-  // 메가 후보: 팩마다 1개 제한
-  let tryMega = (!hasMega && Math.random() < megaChanceByFactor(factor)); // 요구사항 2
+  // 메가 후보: 팩마다 1개 제한 + 최소 간격 확인
+  const now = performance.now();
+  let tryMega = (!hasMega && (now - lastMegaAt) > MEGA_MIN_INTERVAL && Math.random() < megaChanceByFactor(factor));
 
   for(let i=0; i<n; i++){
     const isMega = tryMega;
     spawn(isMega);
-    if(isMega){ hasMega = true; tryMega = false; }
+    if(isMega){ hasMega = true; tryMega = false; lastMegaAt = now; }
   }
 }
 
@@ -287,7 +349,7 @@ function spawn(isMega=false){
   }
   el.style.transform = `translate3d(${x}px,0,0)`;
 
-  // (요구사항 3) 드롭별 하강속도 다르게: 0.9 ~ 1.2배
+  // 드롭별 하강속도 다르게: 0.9 ~ 1.2배 (메가는 0.85배로 조금 느리게)
   const speedMul = isMega ? 0.85 : (0.9 + Math.random()*0.3);
 
   $game.appendChild(el);
@@ -307,7 +369,7 @@ function loop(ts){
 
   for(let i=drops.length-1; i>=0; i--){
     const d = drops[i];
-    const v = baseSp * d.speedMul;  // (요구사항 3) 개별 속도 적용
+    const v = baseSp * d.speedMul;
     d.y += v * dt;
     d.el.style.transform = `translate3d(${d.x}px, ${d.y}px, 0)`;
 
@@ -333,14 +395,24 @@ function loop(ts){
 }
 
 /* =================== GAME FLOW =================== */
+function bindStartButton(){
+  const btn = document.getElementById('startBtn');
+  if(!btn) return;
+  btn.addEventListener('pointerdown', ()=>{
+    $intro.style.display='none';
+    start();
+  });
+}
+
 function start(){
-  // 초기 설명 복원(첫 화면 유지용)
-  $introTitle.textContent = originalTitle;
-  $story.textContent = originalStory;
-  $start.textContent = '게임 시작';
+  // 원래 인트로 복원
+  $introBox.classList.remove('ending');
+  $introBox.innerHTML = originalIntroHTML;
+  bindStartButton();
 
   drops.forEach(d=>d.el.remove()); drops = [];
   score = 0; miss = 0; broken = 0; hasMega = false;
+
   for(let d=2; d<=9; d++) weights[d] = 1;
 
   $score.textContent = '점수: 0';
@@ -365,12 +437,23 @@ function end(clear){
   cancelAnimationFrame(anim);
   $input.value = '';
 
-  // 요구사항 4: 종료 문구
+  // 엔딩 오버레이: 히어로 + 큰 글자 + CTA
   const msg = `용사님의 점수는 ${score}점입니다. 베네치아를 구하러 다시 한번 더 도전하시겠습니까?`;
-  $introTitle.textContent = '게임 종료';
-  $story.textContent = msg;
+  $introBox.classList.add('ending');
+  $introBox.innerHTML = `
+    <div class="endWrap">
+      <div class="endHero"><svg width="96" height="96" viewBox="0 0 64 64"><use href="#heroSymbol"/></svg></div>
+      <div class="endText">
+        <h3>미션 결과 보고</h3>
+        <div class="endMsg">${msg}</div>
+        <div class="endCTA">
+          <button id="startBtn" class="btn">다시 도전</button>
+        </div>
+      </div>
+    </div>
+  `;
   $intro.style.display = 'flex';
-  $start.textContent = '다시 도전';
+  bindStartButton();
 }
 
 /* =================== ANSWER CHECK =================== */
@@ -435,11 +518,6 @@ function backspace(){
   $input.value = $input.value.slice(0,-1);
 }
 
-document.getElementById('startBtn').addEventListener('pointerdown', ()=>{
-  $intro.style.display='none';
-  start();
-});
-
 /* 모바일 지연 제거: pointerdown */
 $keys.forEach(btn=>{
   btn.addEventListener('pointerdown', e=>{
@@ -462,6 +540,9 @@ document.addEventListener('keydown', e=>{
   else if(e.key === 'Backspace') backspace();
   else if(e.key === 'Enter') checkAnswer();
 });
+
+/* 최초 바인딩 */
+bindStartButton();
 </script>
 </body>
 </html>
